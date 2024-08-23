@@ -1,13 +1,14 @@
 import requests
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key='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')
 import json
 
 # Configure your API keys
 google_api_key = 'AIzaSyDUVWuxTmQ-Uou2LjvHky38cq0H6F-n-T4'
-openai_api_key = 'your-openai-api-key'
+openai_api_key = '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'
 
 # Set up OpenAI API key
-openai.api_key = openai_api_key
 
 def get_places_data(location='27.9506,-82.4576', radius='1500', keyword='Spicy Vegetarian Food'):
     url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
@@ -18,6 +19,7 @@ def get_places_data(location='27.9506,-82.4576', radius='1500', keyword='Spicy V
         'key': google_api_key
     }
     response = requests.get(url, params=params)
+
     return response.json()
 
 def format_places_data(data):
@@ -33,28 +35,22 @@ def format_places_data(data):
     return formatted_results
 
 def query_llm(data):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # Use the appropriate model
-        messages=[
-            {"role": "system", "content": "You are an assistant."},
-            {"role": "user", "content": f"Analyze the following places data and provide insights:\n\n{json.dumps(data, indent=2)}"}
-        ],
-        max_tokens=150
-    )
-    return response.choices[0].message['content'].strip()
+    response = client.chat.completions.create(model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": "You are an assistant."},
+        {"role": "user", "content": f"Analyze the following places data and provide insights:\n\n{json.dumps(data, indent=2)}"}
+    ],
+    max_tokens=150)
+    return response.choices[0].message.content.strip()
 
 def main():
     # Get data from Google Places API
     places_data = get_places_data()
-    
+
     # Format data for LLM
-    formatted_data = format_places_data(places_data)
-    
-    # Query LLM
-    llm_response = query_llm(formatted_data)
-    
+    llm_response = query_llm(format_places_data(places_data))
+
     # Print the LLM response
-    print("LLM Response:")
     print(llm_response)
 
 if __name__ == '__main__':
