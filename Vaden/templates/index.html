@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise VIN Comparison Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        .container {
+            margin-top: 50px;
+            max-width: 1200px;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 15px;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .loader {
+            display: none;
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #007bff;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .comparison-list {
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            background-color: #fff;
+            border-radius: 12px;
+        }
+        .insights-card {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .insights-card h3 {
+            margin-bottom: 20px;
+        }
+        .insights-section {
+            margin-top: 40px;
+        }
+        .chart-container {
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Enterprise VIN Comparison Dashboard</h1>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">VIN Comparison Summary</h3>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary" onclick="fetchComparisonData()">Compare VINs <i class="fas fa-sync-alt"></i></button>
+                <div class="loader" id="loader"></div>
+                <div class="table-wrapper mt-4">
+                    <table class="table table-striped table-bordered" id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th>VIN</th>
+                                <th>VCP Factory</th>
+                                <th>CDK Inventory</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-6">
+                <div class="comparison-list" id="vcpNotInCdkList">
+                    <h4>VCP Factory VINs Not in CDK Inventory</h4>
+                    <ul id="vcpNotInCdk" class="list-group"></ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="comparison-list" id="cdkNotInVcpList">
+                    <h4>CDK Inventory VINs Not in VCP Factory</h4>
+                    <ul id="cdkNotInVcp" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="insights-card insights-section">
+            <h3>Business Insights</h3>
+            <div id="insightsContent">
+                <!-- Insights will be dynamically populated here -->
+            </div>
+        </div>
+
+        <!-- Price Distribution Charts -->
+        <div class="row insights-section">
+            <div class="col-md-6">
+                <div class="chart-container" id="priceDistributionVcpChart"></div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container" id="priceDistributionCdkChart"></div>
+            </div>
+        </div>
+
+        <!-- Model Year Distribution Chart -->
+        <div class="row insights-section">
+            <div class="col-md-12">
+                <div class="chart-container" id="modelYearDistributionChart"></div>
+            </div>
+        </div>
+
+        <!-- Model Distribution Chart -->
+        <div class="row insights-section">
+            <div class="col-md-12">
+                <div class="chart-container" id="modelDistributionChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fetchComparisonData() {
+            document.getElementById('loader').style.display = 'block';
+            fetch('/compare_vins')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loader').style.display = 'none';
+                    if (data.status === 'success') {
+                        displaySummary(data.summary);
+                        displayList('vcpNotInCdk', data.vcp_not_in_cdk);
+                        displayList('cdkNotInVcp', data.cdk_not_in_vcp);
+                        displayInsights(data.insights);
+                        plotPriceDistributionCharts(data.insights);
+                        plotModelYearDistributionChart(data.insights);
+                        plotModelDistributionCharts(data.insights);
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                });
+        }
+
+        function displaySummary(summary) {
+            const tbody = document.querySelector('#summaryTable tbody');
+            tbody.innerHTML = '';
+            summary.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.VIN}</td>
+                    <td>${row['VCP Factory Inventory.xlsx'] ? '<span class="badge bg-success">Present</span>' : '<span class="badge bg-danger">Missing</span>'}</td>
+                    <td>${row['CDK Inventory.xlsx'] ? '<span class="badge bg-success">Present</span>' : '<span class="badge bg-danger">Missing</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function displayList(elementId, vinList) {
+            const ul = document.getElementById(elementId);
+            ul.innerHTML = '';
+            vinList.forEach(vin => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.textContent = vin;
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-primary rounded-pill';
+                badge.textContent = 'VIN';
+                li.appendChild(badge);
+                ul.appendChild(li);
+            });
+        }
+
+        function displayInsights(insights) {
+            const insightsContent = document.getElementById('insightsContent');
+            insightsContent.innerHTML = `
+                <p>Total VINs: <strong>${insights.total_vins}</strong></p>
+                <p>VINs Missing in VCP Factory: <strong>${insights.missing_in_vcp}</strong></p>
+                <p>VINs Missing in CDK Inventory: <strong>${insights.missing_in_cdk}</strong></p>
+                ${insights.avg_age_vcp !== undefined ? `<p>Average Age in VCP Factory: <strong>${insights.avg_age_vcp.toFixed(2)} days</strong></p>` : ''}
+                ${insights.avg_age_cdk !== undefined ? `<p>Average Age in CDK Inventory: <strong>${insights.avg_age_cdk.toFixed(2)} days</strong></p>` : ''}
+                ${insights.age_difference !== undefined ? `<p>Age Difference (VCP - CDK): <strong>${insights.age_difference.toFixed(2)} days</strong></p>` : ''}
+                ${insights.avg_model_year_vcp !== undefined ? `<p>Average Model Year in VCP Factory: <strong>${insights.avg_model_year_vcp.toFixed(2)}</strong></p>` : ''}
+                ${insights.avg_model_year_cdk !== undefined ? `<p>Average Model Year in CDK Inventory: <strong>${insights.avg_model_year_cdk.toFixed(2)}</strong></p>` : ''}
+            `;
+        }
+
+        function plotPriceDistributionCharts(insights) {
+            if (insights.price_distribution_vcp && insights.price_distribution_cdk) {
+                const vcpData = insights.price_distribution_vcp;
+                const cdkData = insights.price_distribution_cdk;
+
+                const trace1 = {
+                    x: Object.keys(vcpData),
+                    y: Object.values(vcpData),
+                    type: 'bar',
+                    name: 'VCP Factory',
+                    marker: {
+                        color: 'rgba(0, 123, 255, 0.7)',
+                    },
+                };
+
+                const trace2 = {
+                    x: Object.keys(cdkData),
+                    y: Object.values(cdkData),
+                    type: 'bar',
+                    name: 'CDK Inventory',
+                    marker: {
+                        color: 'rgba(255, 99, 132, 0.7)',
+                    },
+                };
+
+                const layout = {
+                    title: 'Price Distribution',
+                    xaxis: { title: 'Price Range' },
+                    yaxis: { title: 'Count' },
+                    barmode: 'group'
+                };
+
+                Plotly.newPlot('priceDistributionVcpChart', [trace1], layout);
+                Plotly.newPlot('priceDistributionCdkChart', [trace2], layout);
+            }
+        }
+
+        function plotModelYearDistributionChart(insights) {
+            if (insights.model_year_distribution_vcp && insights.model_year_distribution_cdk) {
+                const vcpData = insights.model_year_distribution_vcp;
+                const cdkData = insights.model_year_distribution_cdk;
+
+                const trace1 = {
+                    x: Object.keys(vcpData),
+                    y: Object.values(vcpData),
+                    type: 'bar',
+                    name: 'VCP Factory',
+                    marker: {
+                        color: 'rgba(0, 123, 255, 0.7)',
+                    },
+                };
+
+                const trace2 = {
+                    x: Object.keys(cdkData),
+                    y: Object.values(cdkData),
+                    type: 'bar',
+                    name: 'CDK Inventory',
+                    marker: {
+                        color: 'rgba(255, 99, 132, 0.7)',
+                    },
+                };
+
+                const layout = {
+                    title: 'Model Year Distribution',
+                    xaxis: { title: 'Model Year' },
+                    yaxis: { title: 'Count' },
+                    barmode: 'group'
+                };
+
+                Plotly.newPlot('modelYearDistributionChart', [trace1, trace2], layout);
+            }
+        }
+
+        function plotModelDistributionCharts(insights) {
+            if (insights.model_distribution_vcp && insights.model_distribution_cdk) {
+                // Data for VCP Factory
+                const vcpModels = Object.keys(insights.model_distribution_vcp);
+                const vcpCounts = Object.values(insights.model_distribution_vcp);
+                
+                // Data for CDK Inventory
+                const cdkModels = Object.keys(insights.model_distribution_cdk);
+                const cdkCounts = Object.values(insights.model_distribution_cdk);
+                
+                // Bar chart for VCP Factory
+                const vcpTrace = {
+                    x: vcpModels,
+                    y: vcpCounts,
+                    type: 'bar',
+                    name: 'VCP Factory',
+                    marker: {
+                        color: 'rgba(0, 123, 255, 0.7)',
+                    },
+                };
+                
+                // Bar chart for CDK Inventory
+                const cdkTrace = {
+                    x: cdkModels,
+                    y: cdkCounts,
+                    type: 'bar',
+                    name: 'CDK Inventory',
+                    marker: {
+                        color: 'rgba(255, 99, 132, 0)',
+                    },
+                };
+                
+                const layout = {
+                    title: 'Model Distribution',
+                    xaxis: { title: 'Model' },
+                    yaxis: { title: 'Count' },
+                    barmode: 'group',
+                    margin: { t: 50, l: 50, r: 50, b: 150 },
+                    showlegend: true,
+                };
+                
+                Plotly.newPlot('modelDistributionChart', [vcpTrace, cdkTrace], layout);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchComparisonData(); // Automatically fetch data when the page loads
+        });
+    </script>
+</body>
+</html>
+
+
