@@ -1,8 +1,17 @@
 from openai import OpenAI
 import json
+from dotenv import load_dotenv
+import os
 
-# Set up your OpenAI API key
-client = OpenAI(api_key='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')
+# Load environment variables from the .env file
+load_dotenv()
+
+# Set up your OpenAI API key from the environment variable
+openai_api_key = os.getenv('OPENAI_API_KEY')
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY is not set in the environment variables")
+
+client = OpenAI(api_key=openai_api_key)
 
 def get_user_input():
     """
