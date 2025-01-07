@@ -1,0 +1,20 @@
+SupplyID,SupplyName,Category,SubCategory,Description,UnitPrice
+1,Cylinder heads,Spare Parts,Engine components,Cylinder heads,274.82
+2,pistons,Spare Parts,Engine components,pistons,789.81
+3,bearings,Spare Parts,Engine components,bearings,863.12
+4,Water pump,Spare Parts,Pumps,Water pump,959.39
+5,fuel pump,Spare Parts,Pumps,Fuel pump,278.98
+6,Oil filters,Spare Parts,Filters,Oil filter,437.16
+7,Air filters,Spare Parts,Filters,Air filters,770.51
+8,Electrical cables,Electrical Equipment,Wires,Electrical cables,788.82
+9,"Wire connectors, terminals",Electrical Equipment,Connectors,"Wire connectors, terminals",561.32
+10,Circuit breaker 101A,Electrical Equipment,Circuit breakers,Overload protection devices,320.81
+11,DuraCoat,Paints and Coatings,Anti-corrosion paint,Protects against rust and corrosion,266.89
+12,SealIt,Paints and Coatings,Epoxy coatings,Provides durable surface protection,612.21
+13,MediumWearable,Safety Gear,Life jackets,Personal flotation devices,312.76
+14,ABC-50,Safety Gear,Fire extinguishers,For fire suppression,85.94
+15,Adjustable Wrench,Tools and Toolkits,Wrenches,Adjustable wrench,282.67
+16,Fixed Wrench,Tools and Toolkits,Wrenches,Fixed wrench,298.44
+17,Hammer,Tools and Toolkits,Hammers,Hammer for various types for construction and repair,977.5
+18,Valvolite 20,Lubricants and Oils,Engine oil,Lubricates engine components,230.24
+19,Lubite,Lubricants and Oils,Grease,For bearings and moving parts,840.67

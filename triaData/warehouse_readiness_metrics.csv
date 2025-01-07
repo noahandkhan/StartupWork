@@ -1,0 +1,8 @@
+WarehouseID,InventoryRisk,OrderDelayImpact,InventoryRiskSeverity,OrderDelayImpactSeverity
+1,32.0,1256,1,2
+2,1086.0,2556,3,3
+3,555.0,2031,3,2
+4,99.0,962,1,1
+5,142.0,1129,1,1
+6,138.0,1246,1,2
+7,37.0,1152,1,1

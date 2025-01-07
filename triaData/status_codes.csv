@@ -1,0 +1,10 @@
+code,definition
+AS,Already Shipped
+BD,Delayed - Verify Requirements
+BA,Being processed for shipment
+BB,Backordered against a 'Due In'
+BV,Item procured and on contract for direct shipment to consignee
+BR,Cancelled
+BZ,Attempting to procure for direct delivery
+P,Order Placed
+D,Order Delivered
